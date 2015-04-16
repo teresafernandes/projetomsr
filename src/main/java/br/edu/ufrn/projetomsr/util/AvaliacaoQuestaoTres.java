@@ -49,6 +49,8 @@ public class AvaliacaoQuestaoTres {
 			
 			//Map para armazenar as issues de cada contribuidor por milestones
 			Map<GHMilestone, Map<GHUser, List<GHIssue> >> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser,List<GHIssue>>>();
+//			List<GHUser> colaboradoresRepositorio = (List<GHUser>) repo.getCollaborators();
+			List<GHUser> colaboradoresRepositorio = new ArrayList<GHUser>();
 			int contadorTerminoLaco = 5;
 			GHUser desenvolvedor;
 			BigDecimal porcentagemIssues;
@@ -99,14 +101,17 @@ public class AvaliacaoQuestaoTres {
 						desenvolvedor = is.getUser();
 					}else{
 						// se a issue estiver fechada, o desenvolvedor será quem a fechou
-						//desenvolvedor = is.getClosedBy();
-						desenvolvedor = is.getUser();
+						desenvolvedor = is.getRepository().getIssue(is.getNumber()).getClosedBy();
 					}
 					
 					if(issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor) == null)
 						issuesPorMilestonePorContribuidor.get(ms).put(desenvolvedor, new ArrayList<GHIssue>());
 					// adiciona a issue no map respectivo ao milestone e desenvolvedor atuais	
-					issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor).add(is);					
+					issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor).add(is);
+					
+					// adiciona o desenvolvedor na lista de colaboradores do repositório
+					if(!colaboradoresRepositorio.contains(desenvolvedor))
+						colaboradoresRepositorio.add(desenvolvedor);
 				}
 				
 				i++;
@@ -123,6 +128,9 @@ public class AvaliacaoQuestaoTres {
 				}
 				System.out.println();
 			}
+			
+			//exporta os resultados num arquivo excel
+			ExportarExcel.exportarQuestaoTres(issuesPorMilestonePorContribuidor, colaboradoresRepositorio, repositorio);
 						
 		} catch (IOException e) {
 			e.printStackTrace();

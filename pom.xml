@@ -57,25 +57,13 @@
 	</dependency>
 	
 	<dependency>
-	    <groupId>org.trello4j</groupId>
-	    <artifactId>trello4j</artifactId>
-	    <version>1.0-SNAPSHOT</version>
+		<groupId>org.apache.poi</groupId>
+		<artifactId>poi-ooxml</artifactId>
+		<version>3.11</version>
 	</dependency>
 	
-	<!-- <dependency>
-	    <groupId>com.julienvey.trello</groupId>
-	    <artifactId>trello-java-wrapper</artifactId>
-	    <version>0.3</version>
-	</dependency> -->
+
 	
   </dependencies>
-  
-  <repositories>
-	  <repository>
-	    <id>joelso-mvn-repo</id>
-	    <name>joelso github mvn repo</name>
-	    <url>https://raw.github.com/joelso/joelso-mvn-repo/master/snapshots/</url>
-	</repository>
-  </repositories>
   
 </project>
