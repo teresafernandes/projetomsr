@@ -2,6 +2,8 @@ package br.edu.ufrn.projetomsr.util;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,7 +51,7 @@ public class AvaliacaoQuestaoTres {
 			Map<GHMilestone, Map<GHUser, List<GHIssue> >> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser,List<GHIssue>>>();
 			int contadorTerminoLaco = 5;
 			GHUser desenvolvedor;
-			double porcentagemIssues;
+			BigDecimal porcentagemIssues;
 			
 			//Percorrendo os milestones.
 			//A API do GitHub para Java não fornece uma maneira muito eficiente de percorrer os milestones
@@ -114,7 +116,9 @@ public class AvaliacaoQuestaoTres {
 			for(GHMilestone m : issuesPorMilestonePorContribuidor.keySet()){
 				System.out.println("\nMilestone "+ m.getNumber());
 				for(GHUser u : issuesPorMilestonePorContribuidor.get(m).keySet()){
-					porcentagemIssues = ((double)issuesPorMilestonePorContribuidor.get(m).get(u).size())/(((double)m.getOpenIssues())+((double)m.getClosedIssues()))*100;
+					porcentagemIssues = new BigDecimal(issuesPorMilestonePorContribuidor.get(m).get(u).size()).setScale(2,RoundingMode.HALF_EVEN)
+											.divide(new BigDecimal(m.getOpenIssues()+ m.getClosedIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+											
 					System.out.println(u.getName()+" :"+porcentagemIssues+"% das issues");
 				}
 				System.out.println();
