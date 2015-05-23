@@ -3,9 +3,15 @@ package br.edu.ufrn.projetomsr;
 public class Main {
 
 	public static void main(String[] args) {
-		MineracaoGenericManager m = new MineracaoGepeManager();
-		//m.avaliarQuestaoUm();
-		m.avaliarQuestaoTres();
+		MineracaoOpenRes res = new MineracaoOpenRes();
+		res.avaliarQuestaoUm();
+		
+//		MineracaoGepeManager gepe = new MineracaoGepeManager();
+//		gepe.avaliarQuestaoUm();
+		
+//		MineracaoManageIQ iq = new MineracaoManageIQ();
+//		iq.avaliarQuestaoUm();
+		//m.avaliarQuestaoTres();
 
 //		m = new MineracaoManageIQ();
 //		m.avaliarQuestaoUm();
