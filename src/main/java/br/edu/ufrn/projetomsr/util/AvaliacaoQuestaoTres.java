@@ -4,17 +4,25 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHMilestone;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 
 /**
  * Classe genérica utilizada para realizar a mineração de dados referente à questão 3,
@@ -34,8 +42,9 @@ public class AvaliacaoQuestaoTres {
 	 * verificar tipo de issue (label)
 	 * numero de issues fechadas e proporção de contribuidores
 	 * https://api.github.com/orgs/4soft/repos?access_token=9820d78f80626b3a6637cb5fe5514059278c33f6
+	 * @throws ParseException 
 	 * */
-	public static void minerarQuestaoTres(String repositorio){
+	public static void minerarQuestaoTres(String repositorio) {
 		
 		try {
 			System.out.println("REPOSITÓRIO: " + repositorio);
@@ -52,7 +61,7 @@ public class AvaliacaoQuestaoTres {
 //			List<GHUser> colaboradoresRepositorio = (List<GHUser>) repo.getCollaborators();
 			List<GHUser> colaboradoresRepositorio = new ArrayList<GHUser>();
 			int contadorTerminoLaco = 5;
-			GHUser desenvolvedor;
+			GHUser desenvolvedor = null;
 			BigDecimal porcentagemIssues;
 			
 			//Percorrendo os milestones.
@@ -95,36 +104,41 @@ public class AvaliacaoQuestaoTres {
 				
 				// percorre as issues identificando qual o desenvolvedor
 				for(GHIssue is : issues){
-					if(is.getState().equals(GHIssueState.OPEN)){
-						// se a issue estiver aberta, o desenvolvedor será quem a criou
-						// o ideal é pegar o autor do ultimo evento da issue, mas ainda não consegui pegar os eventos de um issue (TODO)
-						desenvolvedor = is.getUser();
-					}else{
-						// se a issue estiver fechada, o desenvolvedor será quem a fechou
-						desenvolvedor = is.getRepository().getIssue(is.getNumber()).getClosedBy();
+					if(!is.isPullRequest()){
+						if(is.getState().equals(GHIssueState.OPEN)){
+							// se a issue estiver aberta, o desenvolvedor será quem a criou
+							// o ideal é pegar o autor do ultimo evento da issue, mas ainda não consegui pegar os eventos de um issue (TODO)
+							desenvolvedor = is.getAssignee();
+							if(desenvolvedor==null)
+								desenvolvedor = is.getUser();					
+							
+						}else{
+							// se a issue estiver fechada, o desenvolvedor será quem a fechou
+							desenvolvedor = is.getRepository().getIssue(is.getNumber()).getClosedBy();
+						}
+						
+						if(issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor) == null)
+							issuesPorMilestonePorContribuidor.get(ms).put(desenvolvedor, new ArrayList<GHIssue>());
+						// adiciona a issue no map respectivo ao milestone e desenvolvedor atuais	
+						issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor).add(is);
+						
+						// adiciona o desenvolvedor na lista de colaboradores do repositório
+						if(!colaboradoresRepositorio.contains(desenvolvedor))
+							colaboradoresRepositorio.add(desenvolvedor);
 					}
-					
-					if(issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor) == null)
-						issuesPorMilestonePorContribuidor.get(ms).put(desenvolvedor, new ArrayList<GHIssue>());
-					// adiciona a issue no map respectivo ao milestone e desenvolvedor atuais	
-					issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor).add(is);
-					
-					// adiciona o desenvolvedor na lista de colaboradores do repositório
-					if(!colaboradoresRepositorio.contains(desenvolvedor))
-						colaboradoresRepositorio.add(desenvolvedor);
 				}
 				
 				i++;
 			}
 			
-			//TODO armazenar as issues de cada desenvolvedor e em seguida analisar a data de criação e fechamento
+			// armazenar as issues de cada desenvolvedor e em seguida analisar a data de criação e fechamento
 			for(GHMilestone m : issuesPorMilestonePorContribuidor.keySet()){
-				System.out.println("\nMilestone "+ m.getNumber());
+				System.out.println("\nMilestone "+ m.getTitle());
 				for(GHUser u : issuesPorMilestonePorContribuidor.get(m).keySet()){
 					porcentagemIssues = new BigDecimal(issuesPorMilestonePorContribuidor.get(m).get(u).size()).setScale(2,RoundingMode.HALF_EVEN)
 											.divide(new BigDecimal(m.getOpenIssues()+ m.getClosedIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
 											
-					System.out.println(u.getName()+" :"+porcentagemIssues+"% das issues");
+					System.out.println(u+" :"+porcentagemIssues+"% das issues ("+issuesPorMilestonePorContribuidor.get(m).get(u).size()+")");
 				}
 				System.out.println();
 			}
@@ -135,7 +149,26 @@ public class AvaliacaoQuestaoTres {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+	}
+	
+	@SuppressWarnings("unused")
+	private static String getAutorUltimoEventoIssue(GHIssue i, String repositorio) throws ParseException{
+		Client client = Client.create();
+		WebResource webResource = client
+				.resource("https://api.github.com/repos/"+repositorio+"/issues/"+i.getNumber()+"/events");
+		ClientResponse response = webResource.accept("application/json")
+				.get(ClientResponse.class);
+		if (response.getStatus() != 200) 
+			return null;		
+
+		String output = response.getEntity(String.class);
+		JSONArray obj = (JSONArray) JSONValue.parse(output);
+		if(obj != null && obj.size() >0){
+			//DateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+			//return format.parse(((String) ((JSONObject) obj.get(obj.size()-1)).get("created_at")).substring(0, 10)); 
+			return (String) ((JSONObject) ((JSONObject) obj.get(obj.size()-1)).get("actor")).get("login");
+		}
+		return null;
 	}
 
 }

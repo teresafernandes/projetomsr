@@ -25,7 +25,7 @@ public abstract class MineracaoGenericManager {
 	}
 	
 	/**
-	 * Avalia a questão 2 da mineração de dados no projeto.
+	 * Avalia a questão 3 da mineração de dados no projeto.
 	 */
 	public  void avaliarQuestaoTres(){
 		AvaliacaoQuestaoTres.minerarQuestaoTres(nomeRepositorio);
