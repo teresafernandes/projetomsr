@@ -4,38 +4,52 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHMilestone;
+import org.kohsuke.github.GHMilestoneState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 
 /**
  * Classe genérica utilizada para realizar a mineração de dados referente à questão 3,
  * para diferentes projetos.
  * 
  * A questão 3 é a seguinte: "Como identificar se a distribuição de tarefas entre os membros está dificultando o cumprimento das metas da sprint?"
+ * Há algum membro com um número sobrecarregado de issues, em comparação com os demais?
+ * As issues desses membros "mais sobrecarregados" são as que estão atrasando?
+ * É possível definir se esses membros tem algum papel específico dentro da equipe? de gerência talvez? 
  * 
  * @author Teresa
  */
 public class AvaliacaoQuestaoTres {
 	
-	/** TODO 
+	/**
 	 * consultar milestones
 	 * ver issues de milestones fechados: criador, data de criação, quem fechou, data fechado
-	 * ver issues de milestones aberto: criador, data de criação, usuario do ultimo evento (desenvolvedor atual)
+	 * ver issues de milestones aberto: criador, data de criação, usuario do ultimo evento (contribuidor atual)
 	 * verificar complexidade (se existir) de cada issue
 	 * verificar tipo de issue (label)
 	 * numero de issues fechadas e proporção de contribuidores
-	 * https://api.github.com/orgs/4soft/repos?access_token=9820d78f80626b3a6637cb5fe5514059278c33f6
+	 * https://api.github.com/orgs/4soft/repos?access_token=312d8940674b6b83a5812014be2777941f6485c1
+	 * @throws ParseException 
 	 * */
-	public static void minerarQuestaoTres(String repositorio){
+	public static void minerarQuestaoTres(String repositorio) {
 		
 		try {
 			System.out.println("REPOSITÓRIO: " + repositorio);
@@ -44,16 +58,14 @@ public class AvaliacaoQuestaoTres {
 			
 			GitHub github = GitHub.connect();
 			GHRepository repo = github.getRepository(repositorio);
-			
 			int i = 1;
 			
 			//Map para armazenar as issues de cada contribuidor por milestones
 			Map<GHMilestone, Map<GHUser, List<GHIssue> >> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser,List<GHIssue>>>();
-//			List<GHUser> colaboradoresRepositorio = (List<GHUser>) repo.getCollaborators();
-			List<GHUser> colaboradoresRepositorio = new ArrayList<GHUser>();
+			List<GHUser> contribuidoresRepositorio = new ArrayList<GHUser>();
 			int contadorTerminoLaco = 5;
-			GHUser desenvolvedor;
-			BigDecimal porcentagemIssues;
+			GHUser contribuidor = null;
+			BigDecimal porcentagemIssues, porcentagemIssuesAtrasadas;
 			
 			//Percorrendo os milestones.
 			//A API do GitHub para Java não fornece uma maneira muito eficiente de percorrer os milestones
@@ -93,49 +105,123 @@ public class AvaliacaoQuestaoTres {
 				if(issuesPorMilestonePorContribuidor.get(ms) == null)	
 					issuesPorMilestonePorContribuidor.put(ms, new LinkedHashMap<GHUser, List<GHIssue>>());
 				
-				// percorre as issues identificando qual o desenvolvedor
+				//percorre as issues, identificando o contribuidor responsavel por cada uma
 				for(GHIssue is : issues){
 					if(is.getState().equals(GHIssueState.OPEN)){
-						// se a issue estiver aberta, o desenvolvedor será quem a criou
-						// o ideal é pegar o autor do ultimo evento da issue, mas ainda não consegui pegar os eventos de um issue (TODO)
-						desenvolvedor = is.getUser();
+						// se a issue estiver aberta, o contribuidor será aquele que foi associado
+						contribuidor = is.getAssignee();
+						if(contribuidor==null)
+							// caso não tenha sido associado um contribuidor, o responsável é o usuário que criou a issue
+							contribuidor = is.getUser();		
+						
 					}else{
-						// se a issue estiver fechada, o desenvolvedor será quem a fechou
-						desenvolvedor = is.getRepository().getIssue(is.getNumber()).getClosedBy();
+						// se a issue estiver fechada, o contribuidor será aquele que foi associado
+						contribuidor = is.getAssignee();
+						if(contribuidor==null)
+							// caso não tenha sido associado um contribuidor, o responsável será quem a fechou
+							contribuidor = is.getRepository().getIssue(is.getNumber()).getClosedBy();
 					}
 					
-					if(issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor) == null)
-						issuesPorMilestonePorContribuidor.get(ms).put(desenvolvedor, new ArrayList<GHIssue>());
-					// adiciona a issue no map respectivo ao milestone e desenvolvedor atuais	
-					issuesPorMilestonePorContribuidor.get(ms).get(desenvolvedor).add(is);
+					if(issuesPorMilestonePorContribuidor.get(ms).get(contribuidor) == null)
+						issuesPorMilestonePorContribuidor.get(ms).put(contribuidor, new ArrayList<GHIssue>());
+					// adiciona a issue no map respectivo ao milestone e contribuidores atuais	
+					issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).add(is);
 					
-					// adiciona o desenvolvedor na lista de colaboradores do repositório
-					if(!colaboradoresRepositorio.contains(desenvolvedor))
-						colaboradoresRepositorio.add(desenvolvedor);
+					// adiciona o contribuidor na lista de contribuidores do repositório
+					if(!contribuidoresRepositorio.contains(contribuidor))
+						contribuidoresRepositorio.add(contribuidor);
 				}
 				
 				i++;
 			}
 			
-			//TODO armazenar as issues de cada desenvolvedor e em seguida analisar a data de criação e fechamento
+			int issuesAtrasadas;
+			// armazenar as issues de cada contribuidor e em seguida analisar a data de criação e fechamento
 			for(GHMilestone m : issuesPorMilestonePorContribuidor.keySet()){
-				System.out.println("\nMilestone "+ m.getNumber());
+				System.out.println("\nMilestone: "+ m.getTitle() + " ("+m.getState().toString()+")");
 				for(GHUser u : issuesPorMilestonePorContribuidor.get(m).keySet()){
+					issuesAtrasadas = 0;
+					// contabiliza as issues atrasadas de cada contribuidor 
+					for(GHIssue is: issuesPorMilestonePorContribuidor.get(m).get(u)){
+						if(isIssueAtrasada(is))
+							issuesAtrasadas++;
+					}
+					
 					porcentagemIssues = new BigDecimal(issuesPorMilestonePorContribuidor.get(m).get(u).size()).setScale(2,RoundingMode.HALF_EVEN)
 											.divide(new BigDecimal(m.getOpenIssues()+ m.getClosedIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
-											
-					System.out.println(u.getName()+" :"+porcentagemIssues+"% das issues");
+					
+					porcentagemIssuesAtrasadas  = new BigDecimal(issuesAtrasadas).setScale(2,RoundingMode.HALF_EVEN)
+													.divide(new BigDecimal(issuesPorMilestonePorContribuidor.get(m).get(u).size()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+					
+					System.out.println(u.getLogin()+": "+porcentagemIssues+"% das issues ("+issuesPorMilestonePorContribuidor.get(m).get(u).size()+"), "+porcentagemIssuesAtrasadas+"% de issues atrasadas ("+issuesAtrasadas+")");
 				}
 				System.out.println();
 			}
 			
 			//exporta os resultados num arquivo excel
-			ExportarExcel.exportarQuestaoTres(issuesPorMilestonePorContribuidor, colaboradoresRepositorio, repositorio);
+//			ExportarExcel.exportarQuestaoTres(issuesPorMilestonePorContribuidor, contribuidoresRepositorio, repositorio);
 						
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	@SuppressWarnings("unused")
+	private static String getAutorUltimoEventoIssue(GHIssue i, String repositorio) throws ParseException{
+		Client client = Client.create();
+		WebResource webResource = client
+				.resource("https://api.github.com/repos/"+repositorio+"/issues/"+i.getNumber()+"/events");
+		ClientResponse response = webResource.accept("application/json")
+				.get(ClientResponse.class);
+		if (response.getStatus() != 200) 
+			return null;		
+
+		String output = response.getEntity(String.class);
+		JSONArray obj = (JSONArray) JSONValue.parse(output);
+		if(obj != null && obj.size() >0){
+			//DateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+			//return format.parse(((String) ((JSONObject) obj.get(obj.size()-1)).get("created_at")).substring(0, 10)); 
+			return (String) ((JSONObject) ((JSONObject) obj.get(obj.size()-1)).get("actor")).get("login");
+		}
+		return null;
+	}
+	
+	@SuppressWarnings("unused")
+	private static List<GHUser> getTodosContribuidores(String repositorio, GitHub github) throws IOException{
+		Client client = Client.create();
+		WebResource webResource = client
+				.resource("https://api.github.com/repos/"+repositorio+"/contributors");
+		ClientResponse response = webResource.accept("application/json")
+				.get(ClientResponse.class);
+		if (response.getStatus() != 200) 
+			return null;		
+
+		String output = response.getEntity(String.class);
+		JSONArray obj = (JSONArray) JSONValue.parse(output);
+		if(obj.isEmpty())
+			return null;
 		
+		List<GHUser> contribuidores = new ArrayList<GHUser>();
+		for(Object o : obj)
+			contribuidores.add(github.getUser((String) ((JSONObject) o).get("login")));
+		return contribuidores;
+	}
+	
+	private static boolean isIssueAtrasada(GHIssue issue){
+		//Devem ser avaliados apenas os milestones já fechados
+		if (issue.getMilestone().getState() == GHMilestoneState.OPEN)
+			return false;
+		Date dataPrazoMS = issue.getMilestone().getDueOn();
+		//Não há como avaliar milestones sem prazos ou cujos prazos ainda não se venceram
+		if (dataPrazoMS == null || dataPrazoMS.after(new Date()))
+			return false;
+		//Caso existam issues abertas, então automaticamente já estão atrasadas, neste caso.
+		if (issue.getState() == GHIssueState.OPEN)
+			return true;
+		//Avaliando issues fechadas do milestone
+		if (issue.getState() == GHIssueState.CLOSED && issue.getClosedAt().after(dataPrazoMS))
+			return true;		
+		return false;			
 	}
 
 }
