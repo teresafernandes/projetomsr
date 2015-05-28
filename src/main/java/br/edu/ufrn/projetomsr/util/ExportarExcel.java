@@ -12,7 +12,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHMilestone;
 import org.kohsuke.github.GHUser;
 
@@ -24,11 +23,11 @@ public class ExportarExcel {
 	 * @param colaboradoresRepositorio
 	 * @param nomeRepositorio
 	 * */
-	public static void exportarQuestaoTres(Map<GHMilestone, Map<GHUser, List<GHIssue> >> issues, List<GHUser> colaboradoresRepositorio, String nomeRepositorio) throws IOException{
+	public static void exportarQuestaoTres(Map<GHMilestone, Map<GHUser, QuantidadeIssues>> issues, List<GHUser> colaboradoresRepositorio, String nomeRepositorio) throws IOException{
 
 		//inicializar variaveis
 		 int cellCount = 0, rowCount = 0, totalIssues = 0;
-		 BigDecimal porcentagemIssues;
+		 BigDecimal porcentagemIssuesRealizadas, issuesAtrasadas, issuesRealizadas, issuesCriadas;
 		 Workbook wb  = new XSSFWorkbook();
 		 Sheet sheet = wb.createSheet();
 		 
@@ -41,7 +40,23 @@ public class ExportarExcel {
 	     for(GHUser u : colaboradoresRepositorio){
 	    	 cell = row.createCell(cellCount++);
 		     cell.setCellType(Cell.CELL_TYPE_STRING);
-		     cell.setCellValue(u.getName());
+		     cell.setCellValue(u.getName()+"(Ordinal)");
+		     
+	    	 cell = row.createCell(cellCount++);
+		     cell.setCellType(Cell.CELL_TYPE_STRING);
+		     cell.setCellValue(u.getName()+"(% Realizadas)");
+		     
+		     cell = row.createCell(cellCount++);
+		     cell.setCellType(Cell.CELL_TYPE_STRING);
+		     cell.setCellValue(u.getName()+"(Realizadas)");
+		     
+		     cell = row.createCell(cellCount++);
+		     cell.setCellType(Cell.CELL_TYPE_STRING);
+		     cell.setCellValue(u.getName()+"(Atrasadas)");
+		     
+		     cell = row.createCell(cellCount++);
+		     cell.setCellType(Cell.CELL_TYPE_STRING);
+		     cell.setCellValue(u.getName()+"(Criadas)");
 	     }	     
 		
 	     //percorre as issues gravando a porcentagem de cada colaborador
@@ -55,15 +70,38 @@ public class ExportarExcel {
 		     cell.setCellValue(m.getNumber());
 		     
 		     for(GHUser u : colaboradoresRepositorio){
+		    	 porcentagemIssuesRealizadas = BigDecimal.ZERO;
+		    	 issuesAtrasadas  = BigDecimal.ZERO;
+		    	 issuesCriadas  = BigDecimal.ZERO;
+		    	 issuesRealizadas  = BigDecimal.ZERO;
+		    	 
+		    	 if(issues.get(m).get(u) != null){
+				     porcentagemIssuesRealizadas = issues.get(m).get(u).getIssuesRealizadas().setScale(2,RoundingMode.HALF_EVEN)
+								.divide(new BigDecimal(totalIssues),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+				     issuesAtrasadas = issues.get(m).get(u).getIssuesAtrasadas();
+				     issuesRealizadas = issues.get(m).get(u).getIssuesRealizadas();
+				     issuesCriadas  = issues.get(m).get(u).getIssuesCriadas();
+		    	 }
+
 		    	 cell = row.createCell(cellCount++);
 		    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+			     cell.setCellValue(colaboradoresRepositorio.indexOf(u)+1);
+			    		 
+		    	 cell = row.createCell(cellCount++);
+		    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+			     cell.setCellValue(porcentagemIssuesRealizadas.doubleValue());
 			     
-		    	 porcentagemIssues = BigDecimal.ZERO;
-		    	 if(issues.get(m).get(u) != null){
-				     porcentagemIssues = new BigDecimal(issues.get(m).get(u).size()).setScale(2,RoundingMode.HALF_EVEN)
-								.divide(new BigDecimal(totalIssues),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
-		    	 }
-			     cell.setCellValue(porcentagemIssues.doubleValue());
+			     cell = row.createCell(cellCount++);
+		    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+				 cell.setCellValue(issuesRealizadas.doubleValue());
+				 
+				 cell = row.createCell(cellCount++);
+		    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+				 cell.setCellValue(issuesAtrasadas.doubleValue());
+				 
+				 cell = row.createCell(cellCount++);
+		    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+				 cell.setCellValue(issuesCriadas.doubleValue());
 		     }
 	     }
 	     

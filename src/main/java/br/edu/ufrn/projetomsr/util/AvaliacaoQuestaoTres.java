@@ -61,11 +61,12 @@ public class AvaliacaoQuestaoTres {
 			int i = 1;
 			
 			//Map para armazenar as issues de cada contribuidor por milestones
-			Map<GHMilestone, Map<GHUser, List<GHIssue> >> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser,List<GHIssue>>>();
+//			Map<GHMilestone, Map<GHUser, List<GHIssue> >> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser,List<GHIssue>>>();
+			Map<GHMilestone, Map<GHUser, QuantidadeIssues>> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser, QuantidadeIssues>>();
 			List<GHUser> contribuidoresRepositorio = new ArrayList<GHUser>();
 			int contadorTerminoLaco = 5;
-			GHUser contribuidor = null;
-			BigDecimal porcentagemIssues, porcentagemIssuesAtrasadas;
+			GHUser contribuidor = null, criador = null;
+			BigDecimal porcentagemIssues, porcentagemIssuesAtrasadas = BigDecimal.ZERO;
 			
 			//Percorrendo os milestones.
 			//A API do GitHub para Java não fornece uma maneira muito eficiente de percorrer os milestones
@@ -103,7 +104,7 @@ public class AvaliacaoQuestaoTres {
 				
 				//inicializa map
 				if(issuesPorMilestonePorContribuidor.get(ms) == null)	
-					issuesPorMilestonePorContribuidor.put(ms, new LinkedHashMap<GHUser, List<GHIssue>>());
+					issuesPorMilestonePorContribuidor.put(ms, new LinkedHashMap<GHUser, QuantidadeIssues>());
 				
 				//percorre as issues, identificando o contribuidor responsavel por cada uma
 				for(GHIssue is : issues){
@@ -123,9 +124,17 @@ public class AvaliacaoQuestaoTres {
 					}
 					
 					if(issuesPorMilestonePorContribuidor.get(ms).get(contribuidor) == null)
-						issuesPorMilestonePorContribuidor.get(ms).put(contribuidor, new ArrayList<GHIssue>());
+						issuesPorMilestonePorContribuidor.get(ms).put(contribuidor, new QuantidadeIssues());
 					// adiciona a issue no map respectivo ao milestone e contribuidores atuais	
-					issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).add(is);
+					issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).incrementarIssuesRealizadas();
+					if(isIssueAtrasada(is))
+						issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).incrementarIssuesAtrasadas();
+
+					//verifica qual o criador da issue para contabilizar a quantidade de tarefas que cada um abre em cada sprint
+					criador = is.getUser();
+					if(issuesPorMilestonePorContribuidor.get(ms).get(criador) == null)
+						issuesPorMilestonePorContribuidor.get(ms).put(criador, new QuantidadeIssues());
+					issuesPorMilestonePorContribuidor.get(ms).get(criador).incrementarIssuesCriadas();
 					
 					// adiciona o contribuidor na lista de contribuidores do repositório
 					if(!contribuidoresRepositorio.contains(contribuidor))
@@ -135,31 +144,26 @@ public class AvaliacaoQuestaoTres {
 				i++;
 			}
 			
-			int issuesAtrasadas;
-			// armazenar as issues de cada contribuidor e em seguida analisar a data de criação e fechamento
+			// imprime no console as issues processadas
 			for(GHMilestone m : issuesPorMilestonePorContribuidor.keySet()){
 				System.out.println("\nMilestone: "+ m.getTitle() + " ("+m.getState().toString()+")");
 				for(GHUser u : issuesPorMilestonePorContribuidor.get(m).keySet()){
-					issuesAtrasadas = 0;
-					// contabiliza as issues atrasadas de cada contribuidor 
-					for(GHIssue is: issuesPorMilestonePorContribuidor.get(m).get(u)){
-						if(isIssueAtrasada(is))
-							issuesAtrasadas++;
-					}
+				
 					
-					porcentagemIssues = new BigDecimal(issuesPorMilestonePorContribuidor.get(m).get(u).size()).setScale(2,RoundingMode.HALF_EVEN)
+					porcentagemIssues = issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas().setScale(2,RoundingMode.HALF_EVEN)
 											.divide(new BigDecimal(m.getOpenIssues()+ m.getClosedIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
 					
-					porcentagemIssuesAtrasadas  = new BigDecimal(issuesAtrasadas).setScale(2,RoundingMode.HALF_EVEN)
-													.divide(new BigDecimal(issuesPorMilestonePorContribuidor.get(m).get(u).size()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
-					
-					System.out.println(u.getLogin()+": "+porcentagemIssues+"% das issues ("+issuesPorMilestonePorContribuidor.get(m).get(u).size()+"), "+porcentagemIssuesAtrasadas+"% de issues atrasadas ("+issuesAtrasadas+")");
+					if(!issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas().equals(BigDecimal.ZERO))
+						porcentagemIssuesAtrasadas  = issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesAtrasadas().setScale(2,RoundingMode.HALF_EVEN)
+														.divide(issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas(),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+						
+					System.out.println(u.getLogin()+": "+porcentagemIssues+"% das issues ("+issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas()+"), "+porcentagemIssuesAtrasadas+"% de issues atrasadas ("+issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesAtrasadas()+")");
 				}
 				System.out.println();
 			}
 			
 			//exporta os resultados num arquivo excel
-//			ExportarExcel.exportarQuestaoTres(issuesPorMilestonePorContribuidor, contribuidoresRepositorio, repositorio);
+			ExportarExcel.exportarQuestaoTres(issuesPorMilestonePorContribuidor, contribuidoresRepositorio, repositorio);
 						
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -207,7 +211,7 @@ public class AvaliacaoQuestaoTres {
 		return contribuidores;
 	}
 	
-	private static boolean isIssueAtrasada(GHIssue issue){
+	public static boolean isIssueAtrasada(GHIssue issue){
 		//Devem ser avaliados apenas os milestones já fechados
 		if (issue.getMilestone().getState() == GHMilestoneState.OPEN)
 			return false;
