@@ -1,5 +1,6 @@
 package br.edu.ufrn.projetomsr.dominio;
 
+import java.util.Date;
 import java.util.List;
 
 import org.kohsuke.github.GHIssue;
@@ -13,6 +14,8 @@ import org.kohsuke.github.GHIssue;
 public class Milestone {
 	
 	private String titulo;
+	
+	private Date dataPrazo;
 
 	/** Indica a porcentagem de conclusão de um milestone no momento em que ele encerrou seu prazo. */
 	private double porcConclusaoFechamento;
@@ -41,6 +44,14 @@ public class Milestone {
 
 	public void setIssuesAtrasadas(List<GHIssue> issuesAtrasadas) {
 		this.issuesAtrasadas = issuesAtrasadas;
+	}
+
+	public Date getDataPrazo() {
+		return dataPrazo;
+	}
+
+	public void setDataPrazo(Date dataPrazo) {
+		this.dataPrazo = dataPrazo;
 	}
 	
 }

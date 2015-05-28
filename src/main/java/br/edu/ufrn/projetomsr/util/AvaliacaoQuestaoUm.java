@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
@@ -51,10 +49,8 @@ public class AvaliacaoQuestaoUm {
 			int qtdIssuesAtrasadas = 0;
 			int totalIssues = 0;
 			
-			List<GHIssue> issuesAtrasadas = new ArrayList<GHIssue>();
-			Map<GHMilestone, List<GHIssue>> milestonesAtrasados = new HashMap<GHMilestone, List<GHIssue>>();
-			
-			List<Milestone> milestones = new ArrayList<Milestone>();
+			List<GHIssue> issuesAtrasadas = new ArrayList<GHIssue>(); //Issues atrasadas de cada milestone
+			List<Milestone> milestones = new ArrayList<Milestone>(); //Armazenará informações sobre os milestones
 			
 			int contadorTerminoLaco = 5;
 			
@@ -138,12 +134,9 @@ public class AvaliacaoQuestaoUm {
 				}
 				
 				if (possuiAtraso){
-					milestonesAtrasados.put(ms, issuesAtrasadas);
+					//milestonesAtrasados.put(ms, issuesAtrasadas);
 					milestonesComAtraso++;
 				}
-				
-				i++;
-				milestonesAvaliados++;
 				
 				//Guardando milestone avaliado
 				double totalIssuesMilestone = qtdIssuesAbertas + ms.getClosedIssues();
@@ -153,9 +146,16 @@ public class AvaliacaoQuestaoUm {
 				Milestone m = new Milestone();
 				m.setPorcConclusaoFechamento(porcConclusaoMilestone);
 				m.setTitulo(ms.getTitle());
+				m.setIssuesAtrasadas(issuesAtrasadas);
+				m.setDataPrazo(ms.getDueOn());
 				
 				milestones.add(m);
+				
+				i++;
+				milestonesAvaliados++;
 			}
+			
+			//Calculando e exibindo quantidades de milestones e issues
 			
 			double porcMilestonesAtrasados = ((double) milestonesComAtraso/(double) milestonesAvaliados) * 100;
 			double porcIssuesAtrasadas = ((double) qtdIssuesAtrasadas/(double) totalIssues) * 100;
@@ -178,13 +178,13 @@ public class AvaliacaoQuestaoUm {
 			
 			//Exibindo as issues atrasadas de cada milestone
 			
-			if (!milestonesAtrasados.isEmpty()){
-				for (GHMilestone m : milestonesAtrasados.keySet()){
-					System.out.println("Issues atrasadas da sprint " + m.getTitle() 
-							+ " (" + Formatador.getInstance().formatarData(m.getDueOn()) + ")");
-					
-					issuesAtrasadas = milestonesAtrasados.get(m);
-					
+			for (Milestone m : milestones){
+				System.out.println("Issues atrasadas da sprint " + m.getTitulo() 
+						+ " (" + Formatador.getInstance().formatarData(m.getDataPrazo()) + ")");
+				
+				issuesAtrasadas = m.getIssuesAtrasadas();
+				
+				if (issuesAtrasadas != null && !issuesAtrasadas.isEmpty()){
 					for (GHIssue issue : issuesAtrasadas){
 						String textoData = issue.getClosedAt() != null ?
 								Formatador.getInstance().formatarData(issue.getClosedAt()) : 
@@ -193,17 +193,18 @@ public class AvaliacaoQuestaoUm {
 						System.out.println(issue.getNumber() + " - " + issue.getTitle() +
 								" (" + textoData + ")");
 					}
-					
-					System.out.println();
+				} else {
+					System.out.println("-");
 				}
+				
+				System.out.println();
 			}
 			
 			System.out.println();
 			System.out.println("-------------------------");
 			System.out.println();
 			
-			//Exibindo a porcentagem de conclusão de cada milestone no momento do encerramento de seus prazos
-			
+			//Ordenando as sprints por suas porcentagens de conclusão
 			Collections.sort(milestones, new Comparator<Milestone>() {
 
 				public int compare(Milestone o1, Milestone o2) {
@@ -215,6 +216,8 @@ public class AvaliacaoQuestaoUm {
 				}
 				
 			});
+			
+			//Exibindo a porcentagem de conclusão de cada milestone no momento do encerramento de seus prazos
 			
 			System.out.println("Porcentagens de conclusão das sprints no encerramento de seus prazos");
 			
