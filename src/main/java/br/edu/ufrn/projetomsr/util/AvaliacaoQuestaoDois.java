@@ -9,11 +9,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-<<<<<<< HEAD
-import java.util.Set;
-=======
->>>>>>> branch 'master' of https://github.com/teresafernandes/projetomsr
 import java.util.Map;
+import java.util.Set;
 
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
