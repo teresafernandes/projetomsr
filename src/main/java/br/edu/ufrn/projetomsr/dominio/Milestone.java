@@ -22,6 +22,16 @@ public class Milestone {
 	
 	private List<GHIssue> issuesAtrasadas;
 
+	private List<GHIssue> bugIssues;
+	
+	private int qtdTotalIssues;
+	
+	/** 
+	 * Valor utilizado pela questão 2. Serve de base para identificar se as issues foram prejudicadas
+	 * por causa de bugs. 
+	 */
+	private double nota;
+	
 	public double getPorcConclusaoFechamento() {
 		return porcConclusaoFechamento;
 	}
@@ -53,5 +63,28 @@ public class Milestone {
 	public void setDataPrazo(Date dataPrazo) {
 		this.dataPrazo = dataPrazo;
 	}
-	
+
+	public List<GHIssue> getBugIssues() {
+		return bugIssues;
+	}
+
+	public void setBugIssues(List<GHIssue> bugIssues) {
+		this.bugIssues = bugIssues;
+	}
+
+	public int getQtdTotalIssues() {
+		return qtdTotalIssues;
+	}
+
+	public void setQtdTotalIssues(int qtdTotalIssues) {
+		this.qtdTotalIssues = qtdTotalIssues;
+	}
+
+	public double getNota() {
+		return nota;
+	}
+
+	public void setNota(double nota) {
+		this.nota = nota;
+	}
 }

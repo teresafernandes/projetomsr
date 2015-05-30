@@ -1,13 +1,13 @@
 package br.edu.ufrn.projetomsr;
 
+import br.edu.ufrn.projetomsr.util.AvaliacaoQuestaoDois;
 import br.edu.ufrn.projetomsr.util.AvaliacaoQuestaoTres;
 import br.edu.ufrn.projetomsr.util.AvaliacaoQuestaoUm;
 
 /** 
- * Esta classe realiza minerações de dados no Projeto informado através do parâmetro da classe.
+ * Esta classe realiza minerações de dados no projeto informado através do parâmetro da classe.
  * 
- * @see <a href="https://github.com/4Soft/gepe-manager">Gepe-Manager</a> 
- * @author Renan
+ * @author Teresa
  */
 public abstract class MineracaoGenericManager {
 	
@@ -22,6 +22,13 @@ public abstract class MineracaoGenericManager {
 	 */
 	public  void avaliarQuestaoUm(){
 		AvaliacaoQuestaoUm.minerarQuestaoUm(nomeRepositorio);
+	}
+	
+	/**
+	 * Avalia a questão 2 da mineração de dados no projeto.
+	 */
+	public  void avaliarQuestaoDois(){
+		AvaliacaoQuestaoDois.minerarQuestaoDois(nomeRepositorio);
 	}
 	
 	/**
