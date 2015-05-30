@@ -6,7 +6,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
@@ -17,6 +19,7 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
 import br.edu.ufrn.projetomsr.dominio.Milestone;
+import br.edu.ufrn.projetomsr.dominio.QuantidadeIssues;
 
 /**
  * Classe genérica utilizada para realizar a mineração de dados referente à questão 2,
@@ -165,4 +168,88 @@ public class AvaliacaoQuestaoDois {
 	    return rounded.doubleValue();
 	}
 
+	
+	
+	/**
+	 * Analisar: quantidade de bugs na sprint, tempo de resolução do bug, prazo da sprint
+	 * */
+	public static void minerarQuestaoDois_versao2(String repositorio) {
+		try {
+			System.out.println("REPOSITÓRIO: " + repositorio);
+			System.out.println("QUESTÃO 2: Como os bugs afetam a produtividade da equipe com relação ao cumprimento dos prazos?");
+			System.out.println("Minerando dados... Aguarde...");
+			
+			GitHub github = GitHub.connect();
+			GHRepository repo = github.getRepository(repositorio);
+			int i = 1;
+			int contadorTerminoLaco = 5;
+			
+			//Map para armazenar as issues por milestones
+			Map<GHMilestone, QuantidadeIssues> issuesPorMilestone = new LinkedHashMap<GHMilestone, QuantidadeIssues>();
+			
+			//Percorrendo os milestones.
+			//A API do GitHub para Java não fornece uma maneira muito eficiente de percorrer os milestones
+			//de um repositório. Por isso, busco pelos números deles até que não haja mais nenhum milestone,
+			//já que os milestones são ordenados sequencialmente.
+			while (true){
+				
+				GHMilestone ms = null;
+				
+				try {
+					ms = repo.getMilestone(i);
+					
+				} catch (FileNotFoundException e){
+					//Teoricamente, não existem mais milestones. Seria o fim do laço.
+					//Porém, às vezes acontece de pular um dos índices. Acredito que é por causa de milestones removidos.
+					//Sendo assim, para garantir, considero que terminou de percorrer os milestones apenas quando essa exceção é lançada 5 vezes seguidas.
+					
+					contadorTerminoLaco--;
+					
+					if (contadorTerminoLaco == 0)
+						//Por 5 vezes seguidas, não encontrou um próximo milestone. Nesse caso, encerra. 
+						break;
+					else {
+						//Continua o laço
+						i++;
+						continue;
+					}
+				}				
+				contadorTerminoLaco = 5;
+				
+				// armazena todas as issues (aberta e fechadas)
+				List<GHIssue> issues = new ArrayList<GHIssue>();
+				issues.addAll(repo.getIssues(GHIssueState.OPEN, ms));
+				issues.addAll(repo.getIssues(GHIssueState.CLOSED, ms));
+				
+				//inicializa map
+				if(issuesPorMilestone.get(ms) == null)	
+					issuesPorMilestone.put(ms, new QuantidadeIssues());
+				
+				//percorre as issues, identificando se é um bug e se está atrasado
+				for(GHIssue is : issues){
+					if(IssuesUtil.isIssueBug(is)){
+						issuesPorMilestone.get(ms).incrementarIssuesBug();
+						if(IssuesUtil.isIssueAtrasada(is))
+							issuesPorMilestone.get(ms).incrementarIssuesBugAtrasadas();
+					}
+					if(IssuesUtil.isIssueAtrasada(is))
+						issuesPorMilestone.get(ms).incrementarIssuesAtrasadas();
+				}
+				
+				i++;
+			}
+			
+			// imprime no console as issues processadas
+			for(GHMilestone m : issuesPorMilestone.keySet()){
+				System.out.println("\nMilestone: "+ m.getTitle() + " ("+m.getState().toString()+")");
+				System.out.println(m.getClosedIssues()+m.getOpenIssues() + " issues, "+ issuesPorMilestone.get(m).getIssuesAtrasadas() + " issues atrasadas");
+				System.out.println( issuesPorMilestone.get(m).getIssuesBug() + " bugs, "+ issuesPorMilestone.get(m).getIssuesBugAtrasadas() + " bugs atrasadas");
+				System.out.println();
+			}
+			
+						
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

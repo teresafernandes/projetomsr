@@ -15,6 +15,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.kohsuke.github.GHMilestone;
 import org.kohsuke.github.GHUser;
 
+import br.edu.ufrn.projetomsr.dominio.QuantidadeIssues;
+
 public class ExportarExcel {
 
 	/**
