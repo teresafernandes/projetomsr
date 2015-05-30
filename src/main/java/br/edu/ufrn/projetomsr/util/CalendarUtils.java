@@ -3,6 +3,9 @@ package br.edu.ufrn.projetomsr.util;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.joda.time.DateTime;
+import org.joda.time.Days;
+
 /**
  * Classe que re�ne m�todos �teis referentes a datas em geral. 
  * @author Renan
@@ -61,5 +64,17 @@ public class CalendarUtils {
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTime();
     }
+	
+	/** Retorna a quantidade de dias existentes entre duas datas
+	 * @param dataInicio
+	 * @param dataFim
+	 * @return
+	 */
+	public static int calculoDias (Date dataInicio, Date dataFim){
+		DateTime inicio = new DateTime(dataInicio.getTime());
+		DateTime fim = new DateTime(dataFim.getTime());
+		
+		return Days.daysBetween(inicio, fim).getDays();
+	}
 
 }

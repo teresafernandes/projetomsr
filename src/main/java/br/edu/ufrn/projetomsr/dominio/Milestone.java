@@ -28,10 +28,17 @@ public class Milestone {
 	
 	/** 
 	 * Valor utilizado pela questão 2. Serve de base para identificar se as issues foram prejudicadas
-	 * por causa de bugs. 
+	 * por causa de bugs. Quanto maior a nota, pior a classificação.
 	 */
-	private double nota;
+	private double notaBugs;
 	
+	private Date criadoEm;
+	
+	@Override
+	public String toString() {
+		return titulo;
+	}
+
 	public double getPorcConclusaoFechamento() {
 		return porcConclusaoFechamento;
 	}
@@ -80,11 +87,19 @@ public class Milestone {
 		this.qtdTotalIssues = qtdTotalIssues;
 	}
 
-	public double getNota() {
-		return nota;
+	public double getNotaBugs() {
+		return notaBugs;
 	}
 
-	public void setNota(double nota) {
-		this.nota = nota;
+	public void setNotaBugs(double notaBugs) {
+		this.notaBugs = notaBugs;
+	}
+
+	public Date getCriadoEm() {
+		return criadoEm;
+	}
+
+	public void setCriadoEm(Date criadoEm) {
+		this.criadoEm = criadoEm;
 	}
 }
