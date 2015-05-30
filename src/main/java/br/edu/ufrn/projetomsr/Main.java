@@ -4,18 +4,17 @@ public class Main {
 
 	public static void main(String[] args) {
 		MineracaoGenericManager m;
-		
 		m = new MineracaoGepeManager();
-		m.avaliarQuestaoDois();
-//		m.avaliarQuestaoTres();
+//		m.avaliarQuestaoUm();
+		m.avaliarQuestaoTres();
 
-//		m = new MineracaoManageIQ();
+		m = new MineracaoManageIQ();
 //		m.avaliarQuestaoUm();
-//		m.avaliarQuestaoTres();
+		m.avaliarQuestaoTres();
 //		
-//		m = new MineracaoOpenRes();
+		m = new MineracaoOpenRes();
 //		m.avaliarQuestaoUm();
-//		m.avaliarQuestaoTres();
+		m.avaliarQuestaoTres();
 	}
 
 }

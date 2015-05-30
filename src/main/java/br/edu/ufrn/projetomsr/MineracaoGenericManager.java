@@ -1,6 +1,5 @@
 package br.edu.ufrn.projetomsr;
 
-import br.edu.ufrn.projetomsr.util.AvaliacaoQuestaoDois;
 import br.edu.ufrn.projetomsr.util.AvaliacaoQuestaoTres;
 import br.edu.ufrn.projetomsr.util.AvaliacaoQuestaoUm;
 
@@ -25,14 +24,7 @@ public abstract class MineracaoGenericManager {
 	}
 	
 	/**
-	 * Avalia a questão 2 da mineração de dados no projeto.
-	 */
-	public  void avaliarQuestaoDois(){
-		AvaliacaoQuestaoDois.minerarQuestaoDois(nomeRepositorio);
-	}
-	
-	/**
-	 * Avalia a questão 2 da mineração de dados no projeto.
+	 * Avalia a questão 3 da mineração de dados no projeto.
 	 */
 	public  void avaliarQuestaoTres(){
 		AvaliacaoQuestaoTres.minerarQuestaoTres(nomeRepositorio);
