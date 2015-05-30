@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +16,11 @@ import org.json.simple.JSONValue;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHMilestone;
-import org.kohsuke.github.GHMilestoneState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+
+import br.edu.ufrn.projetomsr.dominio.QuantidadeIssues;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -61,7 +61,6 @@ public class AvaliacaoQuestaoTres {
 			int i = 1;
 			
 			//Map para armazenar as issues de cada contribuidor por milestones
-//			Map<GHMilestone, Map<GHUser, List<GHIssue> >> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser,List<GHIssue>>>();
 			Map<GHMilestone, Map<GHUser, QuantidadeIssues>> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser, QuantidadeIssues>>();
 			List<GHUser> contribuidoresRepositorio = new ArrayList<GHUser>();
 			int contadorTerminoLaco = 5;
@@ -127,7 +126,7 @@ public class AvaliacaoQuestaoTres {
 						issuesPorMilestonePorContribuidor.get(ms).put(contribuidor, new QuantidadeIssues());
 					// adiciona a issue no map respectivo ao milestone e contribuidores atuais	
 					issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).incrementarIssuesRealizadas();
-					if(isIssueAtrasada(is))
+					if(IssuesUtil.isIssueAtrasada(is))
 						issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).incrementarIssuesAtrasadas();
 
 					//verifica qual o criador da issue para contabilizar a quantidade de tarefas que cada um abre em cada sprint
@@ -209,23 +208,6 @@ public class AvaliacaoQuestaoTres {
 		for(Object o : obj)
 			contribuidores.add(github.getUser((String) ((JSONObject) o).get("login")));
 		return contribuidores;
-	}
-	
-	public static boolean isIssueAtrasada(GHIssue issue){
-		//Devem ser avaliados apenas os milestones já fechados
-		if (issue.getMilestone().getState() == GHMilestoneState.OPEN)
-			return false;
-		Date dataPrazoMS = issue.getMilestone().getDueOn();
-		//Não há como avaliar milestones sem prazos ou cujos prazos ainda não se venceram
-		if (dataPrazoMS == null || dataPrazoMS.after(new Date()))
-			return false;
-		//Caso existam issues abertas, então automaticamente já estão atrasadas, neste caso.
-		if (issue.getState() == GHIssueState.OPEN)
-			return true;
-		//Avaliando issues fechadas do milestone
-		if (issue.getState() == GHIssueState.CLOSED && issue.getClosedAt().after(dataPrazoMS))
-			return true;		
-		return false;			
 	}
 
 }
