@@ -139,7 +139,7 @@ public class AvaliacaoQuestaoTres {
 						contribuidoresRepositorio.add(contribuidor);
 				}
 				
-				milestone.setTitulo(ms.getTitle());
+				milestone.setTitulo(ms.getNumber()+"");
 				milestone.setDataPrazo(ms.getDueOn());
 				milestone.setQtdTotalIssues(ms.getOpenIssues()+ ms.getClosedIssues());
 				milestone.setCriadoEm(ms.getCreatedAt());
@@ -179,7 +179,7 @@ public class AvaliacaoQuestaoTres {
 			System.out.println("Correlação (desvio da distribuição de issues VS issues com atraso no milestone): "+ s.correlation(desvioMilestones, atrasoMilestones));
 			
 			//exporta os resultados num arquivo excel
-			//ExportarExcel.exportarQuestaoTres(listaMilestones, contribuidoresRepositorio, repositorio);
+			ExportarExcel.exportarQuestaoTres(listaMilestones, contribuidoresRepositorio, repositorio);
 						
 		} catch (IOException e) {
 			e.printStackTrace();

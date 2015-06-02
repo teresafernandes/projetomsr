@@ -43,7 +43,7 @@ public class ExportarExcel {
 		     cell.setCellType(Cell.CELL_TYPE_STRING);
 		     cell.setCellValue(u.getName()+"(Ordinal)");
 		     
-	    	 cell = row.createCell(cellCount++);
+		     cell = row.createCell(cellCount++);
 		     cell.setCellType(Cell.CELL_TYPE_STRING);
 		     cell.setCellValue(u.getName()+"(% Realizadas)");
 		     
@@ -58,7 +58,15 @@ public class ExportarExcel {
 		     cell = row.createCell(cellCount++);
 		     cell.setCellType(Cell.CELL_TYPE_STRING);
 		     cell.setCellValue(u.getName()+"(Criadas)");
-	     }	     
+	     }	
+	     
+	     cell = row.createCell(cellCount++);
+	     cell.setCellType(Cell.CELL_TYPE_STRING);
+	     cell.setCellValue("Desvio padrão da distribuição de issues");
+	     
+	     cell = row.createCell(cellCount++);
+	     cell.setCellType(Cell.CELL_TYPE_STRING);
+	     cell.setCellValue("Total de Issues Atrasadas");  
 		
 	     //percorre as issues gravando a porcentagem de cada colaborador
 	     for(Milestone m: milestones){
@@ -103,6 +111,14 @@ public class ExportarExcel {
 		    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
 				 cell.setCellValue(issuesCriadas.doubleValue());
 		     }
+		     
+			 cell = row.createCell(cellCount++);
+	    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+		     cell.setCellValue(m.getDesvioPadraoIssues());
+		     
+		     cell = row.createCell(cellCount++);
+	    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+		     cell.setCellValue(m.getQtdIssuesAtrasadas());
 	     }
 	     
 	     // salva o arquivo excel
