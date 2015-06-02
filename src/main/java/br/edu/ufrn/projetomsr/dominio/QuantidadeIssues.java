@@ -8,6 +8,8 @@ public class QuantidadeIssues {
 		issuesRealizadas = BigDecimal.ZERO;
 		issuesAtrasadas = BigDecimal.ZERO;
 		issuesCriadas = BigDecimal.ZERO;
+		issuesBug = BigDecimal.ZERO;
+		issuesBugAtrasadas = BigDecimal.ZERO;
 	}
 	private BigDecimal issuesRealizadas;
 	private BigDecimal issuesAtrasadas;

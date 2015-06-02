@@ -1,9 +1,13 @@
 package br.edu.ufrn.projetomsr.dominio;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHUser;
 
 
 /**
@@ -33,6 +37,12 @@ public class Milestone {
 	private double notaBugs;
 	
 	private Date criadoEm;
+	
+	private Map<GHUser, QuantidadeIssues> issuesPorContribuidor;
+	
+	public Milestone() {
+		issuesPorContribuidor = new LinkedHashMap<GHUser, QuantidadeIssues>();
+	}
 	
 	@Override
 	public String toString() {
@@ -102,4 +112,48 @@ public class Milestone {
 	public void setCriadoEm(Date criadoEm) {
 		this.criadoEm = criadoEm;
 	}
+
+	public Map<GHUser, QuantidadeIssues> getIssuesPorContribuidor() {
+		return issuesPorContribuidor;
+	}
+
+	public void setIssuesPorContribuidor(
+			Map<GHUser, QuantidadeIssues> issuesPorContribuidor) {
+		this.issuesPorContribuidor = issuesPorContribuidor;
+	}	
+	
+
+	public double getDesvioPadraoIssues() {
+		if(issuesPorContribuidor != null){
+			StandardDeviation desvioPadrao = new StandardDeviation();
+			return desvioPadrao.evaluate(getArrayDistribuicaoIssues());
+		}
+		return 0;
+	}
+
+	
+	public double[] getArrayDistribuicaoIssues(){
+		if(issuesPorContribuidor != null){
+			double[] distribuicao = new double[issuesPorContribuidor.keySet().size()];
+			int i = 0;
+			for(GHUser u : issuesPorContribuidor.keySet())
+				distribuicao[i++] = issuesPorContribuidor.get(u).getIssuesRealizadas().doubleValue();
+			
+			return distribuicao;
+		}
+		return null;	
+	}
+
+	/** Retorna a quantidade de issues atrasadas no milestone.
+	 * Utilizado somente na avaliação da questão três, pois depende do map de issues por contribuidor*/
+	public double getQtdIssuesAtrasadas() {
+		double issuesAtrasadas = 0;
+		if(issuesPorContribuidor != null){
+			for(GHUser u : issuesPorContribuidor.keySet())
+				issuesAtrasadas += issuesPorContribuidor.get(u).getIssuesAtrasadas().doubleValue();
+		}
+		return issuesAtrasadas;
+	}
+	
+
 }

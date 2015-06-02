@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -15,20 +14,20 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.kohsuke.github.GHMilestone;
 import org.kohsuke.github.GHUser;
 
-import br.edu.ufrn.projetomsr.dominio.QuantidadeIssues;
+import br.edu.ufrn.projetomsr.dominio.Milestone;
 
 public class ExportarExcel {
 
 	/**
 	 * Método que exporta para excel os resultados obtidos na extração dos dados para a questão 3.
-	 * @param issues
+	 * @param milestones
 	 * @param colaboradoresRepositorio
 	 * @param nomeRepositorio
 	 * */
-	public static void exportarQuestaoTres(Map<GHMilestone, Map<GHUser, QuantidadeIssues>> issues, List<GHUser> colaboradoresRepositorio, String nomeRepositorio) throws IOException{
+	public static void exportarQuestaoTres(List<Milestone> milestones, List<GHUser> colaboradoresRepositorio, String nomeRepositorio) throws IOException{
 
 		//inicializar variaveis
-		 int cellCount = 0, rowCount = 0, totalIssues = 0;
+		 int cellCount = 0, rowCount = 0;
 		 BigDecimal porcentagemIssuesRealizadas, issuesAtrasadas, issuesRealizadas, issuesCriadas;
 		 Workbook wb  = new XSSFWorkbook();
 		 Sheet sheet = wb.createSheet();
@@ -62,14 +61,13 @@ public class ExportarExcel {
 	     }	     
 		
 	     //percorre as issues gravando a porcentagem de cada colaborador
-	     for(GHMilestone m: issues.keySet()){
-	    	 totalIssues = m.getOpenIssues()+ m.getClosedIssues();
+	     for(Milestone m: milestones){
 	    	 cellCount = 0;
 	    	 
 	    	 row = sheet.createRow(rowCount++);
 	    	 cell = row.createCell(cellCount++);
 	    	 cell.setCellType(Cell.CELL_TYPE_STRING);
-		     cell.setCellValue(m.getNumber());
+		     cell.setCellValue(m.getTitulo());
 		     
 		     for(GHUser u : colaboradoresRepositorio){
 		    	 porcentagemIssuesRealizadas = BigDecimal.ZERO;
@@ -77,12 +75,12 @@ public class ExportarExcel {
 		    	 issuesCriadas  = BigDecimal.ZERO;
 		    	 issuesRealizadas  = BigDecimal.ZERO;
 		    	 
-		    	 if(issues.get(m).get(u) != null){
-				     porcentagemIssuesRealizadas = issues.get(m).get(u).getIssuesRealizadas().setScale(2,RoundingMode.HALF_EVEN)
-								.divide(new BigDecimal(totalIssues),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
-				     issuesAtrasadas = issues.get(m).get(u).getIssuesAtrasadas();
-				     issuesRealizadas = issues.get(m).get(u).getIssuesRealizadas();
-				     issuesCriadas  = issues.get(m).get(u).getIssuesCriadas();
+		    	 if(m.getIssuesPorContribuidor().get(u) != null){
+				     porcentagemIssuesRealizadas = m.getIssuesPorContribuidor().get(u).getIssuesRealizadas().setScale(2,RoundingMode.HALF_EVEN)
+								.divide(new BigDecimal(m.getQtdTotalIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+				     issuesAtrasadas = m.getIssuesPorContribuidor().get(u).getIssuesAtrasadas();
+				     issuesRealizadas = m.getIssuesPorContribuidor().get(u).getIssuesRealizadas();
+				     issuesCriadas  = m.getIssuesPorContribuidor().get(u).getIssuesCriadas();
 		    	 }
 
 		    	 cell = row.createCell(cellCount++);
