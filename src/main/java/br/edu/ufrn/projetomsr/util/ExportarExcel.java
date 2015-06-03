@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -15,6 +16,7 @@ import org.kohsuke.github.GHMilestone;
 import org.kohsuke.github.GHUser;
 
 import br.edu.ufrn.projetomsr.dominio.Milestone;
+import br.edu.ufrn.projetomsr.dominio.QuantidadeIssues;
 
 public class ExportarExcel {
 
@@ -124,6 +126,58 @@ public class ExportarExcel {
 	     // salva o arquivo excel
 	     nomeRepositorio =  nomeRepositorio.replace('/','-');
 	     FileOutputStream fileOut = new FileOutputStream("relatorioQuestao3"+nomeRepositorio+".xls");
+	     wb.write(fileOut);
+	     fileOut.close();
+	     wb.close();
+	}
+	
+	/**
+	 * Método que exporta para excel os resultados obtidos na extração dos dados para a questão 3.
+	 * @param issuesPorMilestone
+	 * @param colaboradoresRepositorio
+	 * @param nomeRepositorio
+	 * */
+	public static void exportarQuestaoDois(Map<GHMilestone, QuantidadeIssues> issuesPorMilestone, String nomeRepositorio) throws IOException{
+
+		//inicializar variaveis
+		 int cellCount = 0, rowCount = 0;
+		 Workbook wb  = new XSSFWorkbook();
+		 Sheet sheet = wb.createSheet();
+		 
+	     Row row = sheet.createRow(rowCount++);
+	     Cell cell = row.createCell(cellCount++);
+	     cell.setCellType(Cell.CELL_TYPE_STRING);
+	     cell.setCellValue("Milestone");
+	     
+	     cell = row.createCell(cellCount++);
+	     cell.setCellType(Cell.CELL_TYPE_STRING);
+	     cell.setCellValue("Bug Issues");
+	     
+	     cell = row.createCell(cellCount++);
+	     cell.setCellType(Cell.CELL_TYPE_STRING);
+	     cell.setCellValue("Total de Issues Atrasadas");  
+		
+	     //percorre as issues gravando a porcentagem de cada colaborador
+	     for(GHMilestone m: issuesPorMilestone.keySet()){
+	    	 cellCount = 0;
+	    	 
+	    	 row = sheet.createRow(rowCount++);
+	    	 cell = row.createCell(cellCount++);
+	    	 cell.setCellType(Cell.CELL_TYPE_STRING);
+		     cell.setCellValue(m.getNumber());
+		     
+			 cell = row.createCell(cellCount++);
+	    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+		     cell.setCellValue(issuesPorMilestone.get(m).getIssuesBug().doubleValue());
+		     
+		     cell = row.createCell(cellCount++);
+	    	 cell.setCellType(Cell.CELL_TYPE_NUMERIC);
+		     cell.setCellValue(issuesPorMilestone.get(m).getIssuesAtrasadas().doubleValue());
+	     }
+	     
+	     // salva o arquivo excel
+	     nomeRepositorio =  nomeRepositorio.replace('/','-');
+	     FileOutputStream fileOut = new FileOutputStream("relatorioQuestao2"+nomeRepositorio+".xls");
 	     wb.write(fileOut);
 	     fileOut.close();
 	     wb.close();

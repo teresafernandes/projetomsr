@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHLabel;
@@ -318,14 +319,25 @@ public class AvaliacaoQuestaoDois {
 				i++;
 			}
 			
+			//Armazena valores a serem usados no calculo da correlação de spearman
+			double[] bugIssues = new double[issuesPorMilestone.keySet().size()];
+			double[] issuesAtrasadas = new double[issuesPorMilestone.keySet().size()];
+			i =0;
 			// imprime no console as issues processadas
 			for(GHMilestone m : issuesPorMilestone.keySet()){
 				System.out.println("\nMilestone: "+ m.getTitle() + " ("+m.getState().toString()+")");
 				System.out.println(m.getClosedIssues()+m.getOpenIssues() + " issues, "+ issuesPorMilestone.get(m).getIssuesAtrasadas() + " issues atrasadas");
 				System.out.println( issuesPorMilestone.get(m).getIssuesBug() + " bugs, "+ issuesPorMilestone.get(m).getIssuesBugAtrasadas() + " bugs atrasadas");
 				System.out.println();
+				
+				bugIssues[i] = issuesPorMilestone.get(m).getIssuesBug().doubleValue();
+				issuesAtrasadas[i++] = issuesPorMilestone.get(m).getIssuesAtrasadas().doubleValue();
 			}
+			SpearmansCorrelation s = new SpearmansCorrelation();
+			System.out.println("Correlação (numero de bugs VS issues com atraso no milestone): "+ s.correlation(bugIssues, issuesAtrasadas));
 			
+			//exporta os resultados num arquivo excel
+			ExportarExcel.exportarQuestaoDois(issuesPorMilestone,repositorio);
 						
 		} catch (IOException e) {
 			e.printStackTrace();
