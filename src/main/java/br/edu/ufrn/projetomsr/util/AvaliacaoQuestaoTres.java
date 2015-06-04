@@ -6,10 +6,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -20,6 +19,7 @@ import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
+import br.edu.ufrn.projetomsr.dominio.Milestone;
 import br.edu.ufrn.projetomsr.dominio.QuantidadeIssues;
 
 import com.sun.jersey.api.client.Client;
@@ -61,8 +61,9 @@ public class AvaliacaoQuestaoTres {
 			int i = 1;
 			
 			//Map para armazenar as issues de cada contribuidor por milestones
-			Map<GHMilestone, Map<GHUser, QuantidadeIssues>> issuesPorMilestonePorContribuidor = new LinkedHashMap<GHMilestone, Map<GHUser, QuantidadeIssues>>();
+			List<Milestone> listaMilestones = new ArrayList<Milestone>();
 			List<GHUser> contribuidoresRepositorio = new ArrayList<GHUser>();
+			Milestone milestone;
 			int contadorTerminoLaco = 5;
 			GHUser contribuidor = null, criador = null;
 			BigDecimal porcentagemIssues, porcentagemIssuesAtrasadas = BigDecimal.ZERO;
@@ -100,10 +101,8 @@ public class AvaliacaoQuestaoTres {
 				List<GHIssue> issues = new ArrayList<GHIssue>();
 				issues.addAll(repo.getIssues(GHIssueState.OPEN, ms));
 				issues.addAll(repo.getIssues(GHIssueState.CLOSED, ms));
-				
-				//inicializa map
-				if(issuesPorMilestonePorContribuidor.get(ms) == null)	
-					issuesPorMilestonePorContribuidor.put(ms, new LinkedHashMap<GHUser, QuantidadeIssues>());
+			
+				milestone = new Milestone();
 				
 				//percorre as issues, identificando o contribuidor responsavel por cada uma
 				for(GHIssue is : issues){
@@ -122,53 +121,71 @@ public class AvaliacaoQuestaoTres {
 							contribuidor = is.getRepository().getIssue(is.getNumber()).getClosedBy();
 					}
 					
-					if(issuesPorMilestonePorContribuidor.get(ms).get(contribuidor) == null)
-						issuesPorMilestonePorContribuidor.get(ms).put(contribuidor, new QuantidadeIssues());
+					if(milestone.getIssuesPorContribuidor().get(contribuidor) == null)
+						milestone.getIssuesPorContribuidor().put(contribuidor, new QuantidadeIssues());
 					// adiciona a issue no map respectivo ao milestone e contribuidores atuais	
-					issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).incrementarIssuesRealizadas();
+					milestone.getIssuesPorContribuidor().get(contribuidor).incrementarIssuesRealizadas();
 					if(IssuesUtil.isIssueAtrasada(is))
-						issuesPorMilestonePorContribuidor.get(ms).get(contribuidor).incrementarIssuesAtrasadas();
+						milestone.getIssuesPorContribuidor().get(contribuidor).incrementarIssuesAtrasadas();
 
 					//verifica qual o criador da issue para contabilizar a quantidade de tarefas que cada um abre em cada sprint
 					criador = is.getUser();
-					if(issuesPorMilestonePorContribuidor.get(ms).get(criador) == null)
-						issuesPorMilestonePorContribuidor.get(ms).put(criador, new QuantidadeIssues());
-					issuesPorMilestonePorContribuidor.get(ms).get(criador).incrementarIssuesCriadas();
+					if(milestone.getIssuesPorContribuidor().get(criador) == null)
+						milestone.getIssuesPorContribuidor().put(criador, new QuantidadeIssues());
+					milestone.getIssuesPorContribuidor().get(criador).incrementarIssuesCriadas();
 					
 					// adiciona o contribuidor na lista de contribuidores do repositório
 					if(!contribuidoresRepositorio.contains(contribuidor))
 						contribuidoresRepositorio.add(contribuidor);
 				}
 				
+				milestone.setTitulo(ms.getNumber()+"");
+				milestone.setDataPrazo(ms.getDueOn());
+				milestone.setQtdTotalIssues(ms.getOpenIssues()+ ms.getClosedIssues());
+				milestone.setCriadoEm(ms.getCreatedAt());
+				
+				listaMilestones.add(milestone);
+				
 				i++;
 			}
 			
+			//Armazena valores a serem usados no calculo da correlação de spearman
+			double[] desvioMilestones = new double[listaMilestones.size()];
+			double[] atrasoMilestones = new double[listaMilestones.size()];
+			i = 0;
 			// imprime no console as issues processadas
-			for(GHMilestone m : issuesPorMilestonePorContribuidor.keySet()){
-				System.out.println("\nMilestone: "+ m.getTitle() + " ("+m.getState().toString()+")");
-				for(GHUser u : issuesPorMilestonePorContribuidor.get(m).keySet()){
-				
+			for(Milestone m : listaMilestones){
+				System.out.println("\nMilestone: "+ m.getTitulo() + " ("+Formatador.getInstance().formatarData(m.getCriadoEm())+")");
+				for(GHUser u : m.getIssuesPorContribuidor().keySet()){
 					
-					porcentagemIssues = issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas().setScale(2,RoundingMode.HALF_EVEN)
-											.divide(new BigDecimal(m.getOpenIssues()+ m.getClosedIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+					porcentagemIssues = m.getIssuesPorContribuidor().get(u).getIssuesRealizadas().setScale(2,RoundingMode.HALF_EVEN)
+											.divide(new BigDecimal(m.getQtdTotalIssues()),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
 					
-					if(!issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas().equals(BigDecimal.ZERO))
-						porcentagemIssuesAtrasadas  = issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesAtrasadas().setScale(2,RoundingMode.HALF_EVEN)
-														.divide(issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas(),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
+					if(!m.getIssuesPorContribuidor().get(u).getIssuesRealizadas().equals(BigDecimal.ZERO))
+						porcentagemIssuesAtrasadas  = m.getIssuesPorContribuidor().get(u).getIssuesAtrasadas().setScale(2,RoundingMode.HALF_EVEN)
+														.divide(m.getIssuesPorContribuidor().get(u).getIssuesRealizadas(),2, RoundingMode.HALF_EVEN).multiply(new BigDecimal(100)).setScale(2,RoundingMode.HALF_EVEN);
 						
-					System.out.println(u.getLogin()+": "+porcentagemIssues+"% das issues ("+issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesRealizadas()+"), "+porcentagemIssuesAtrasadas+"% de issues atrasadas ("+issuesPorMilestonePorContribuidor.get(m).get(u).getIssuesAtrasadas()+")");
+					System.out.println(u.getLogin()+": "+porcentagemIssues+"% das issues ("+m.getIssuesPorContribuidor().get(u).getIssuesRealizadas()+"), "+porcentagemIssuesAtrasadas+"% de issues atrasadas ("+m.getIssuesPorContribuidor().get(u).getIssuesAtrasadas()+")");
 				}
+				//calcula o desvio padrão da distribuição de issues entre contribuidores
+				Double desvio = m.getDesvioPadraoIssues();
+				desvioMilestones[i] = desvio;
+				atrasoMilestones[i++] = m.getQtdIssuesAtrasadas();
+				System.out.println("Desvio padrão: "+desvio);
 				System.out.println();
 			}
 			
+			SpearmansCorrelation s = new SpearmansCorrelation();
+			System.out.println("Correlação (desvio da distribuição de issues VS issues com atraso no milestone): "+ s.correlation(desvioMilestones, atrasoMilestones));
+			
 			//exporta os resultados num arquivo excel
-			ExportarExcel.exportarQuestaoTres(issuesPorMilestonePorContribuidor, contribuidoresRepositorio, repositorio);
+			ExportarExcel.exportarQuestaoTres(listaMilestones, contribuidoresRepositorio, repositorio);
 						
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@SuppressWarnings("unused")
 	private static String getAutorUltimoEventoIssue(GHIssue i, String repositorio) throws ParseException{
 		Client client = Client.create();
