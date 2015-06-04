@@ -4,8 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -205,17 +203,17 @@ public class AvaliacaoQuestaoUm {
 			System.out.println();
 			
 			//Ordenando as sprints por suas porcentagens de conclusão
-			Collections.sort(milestones, new Comparator<Milestone>() {
-
-				public int compare(Milestone o1, Milestone o2) {
-					if (o1.getPorcConclusaoFechamento() > o2.getPorcConclusaoFechamento())
-						return 1;
-					if (o1.getPorcConclusaoFechamento() < o2.getPorcConclusaoFechamento())
-						return -1;
-					return 0;
-				}
-				
-			});
+//			Collections.sort(milestones, new Comparator<Milestone>() {
+//
+//				public int compare(Milestone o1, Milestone o2) {
+//					if (o1.getPorcConclusaoFechamento() > o2.getPorcConclusaoFechamento())
+//						return 1;
+//					if (o1.getPorcConclusaoFechamento() < o2.getPorcConclusaoFechamento())
+//						return -1;
+//					return 0;
+//				}
+//				
+//			});
 			
 			//Exibindo a porcentagem de conclusão de cada milestone no momento do encerramento de seus prazos
 			
