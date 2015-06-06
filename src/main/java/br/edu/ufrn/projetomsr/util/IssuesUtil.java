@@ -23,7 +23,7 @@ public class IssuesUtil {
 		if (issue.getState() == GHIssueState.OPEN)
 			return true;
 		//Avaliando issues fechadas do milestone
-		if (issue.getState() == GHIssueState.CLOSED && issue.getClosedAt().after(dataPrazoMS))
+		if (issue.getState() == GHIssueState.CLOSED && CalendarUtils.removeTime(issue.getClosedAt()).after(dataPrazoMS))
 			return true;		
 		return false;			
 	}
