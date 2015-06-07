@@ -15,6 +15,7 @@ import org.json.simple.JSONValue;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHMilestone;
+import org.kohsuke.github.GHMilestoneState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
@@ -96,6 +97,12 @@ public class AvaliacaoQuestaoTres {
 					}
 				}				
 				contadorTerminoLaco = 5;
+				
+				//Devem ser avaliados apenas os milestones já fechados
+				if (ms.getState() == GHMilestoneState.OPEN){
+					i++;
+					continue;
+				}
 				
 				// armazena todas as issues (aberta e fechadas)
 				List<GHIssue> issues = new ArrayList<GHIssue>();
